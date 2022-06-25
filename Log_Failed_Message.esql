@@ -1,0 +1,19 @@
+
+CREATE COMPUTE MODULE Log_Failed_Message
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		CALL LogFailMessage();
+		RETURN TRUE;
+	END;
+
+	CREATE PROCEDURE LogFailMessage() BEGIN
+		SET OutputRoot.Properties = InputRoot.Properties;
+		CREATE LASTCHILD OF OutputRoot DOMAIN('XMLNSC');
+		SET OutputRoot.XMLNSC.Logging_Message.Timestamp = CAST(CURRENT_TIMESTAMP AS CHAR FORMAT 'YYYY-MM-dd.HH.mm.ss.SSS');
+		SET OutputRoot.XMLNSC.Logging_Message.Level = 'ERROR';
+		SET OutputRoot.XMLNSC.Logging_Message.Source = BrokerName;
+		SET OutputRoot.XMLNSC.Logging_Message.Service = MessageFlowLabel;
+		SET OutputRoot.XMLNSC.Logging_Message.Status = 'Failed';
+		SET OutputRoot.XMLNSC.Logging_Message.Message = shrError;
+	END;
+END MODULE;

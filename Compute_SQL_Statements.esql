@@ -1,11 +1,16 @@
 DECLARE out_text CHAR;
+DECLARE shrError SHARED CHAR;
 
 CREATE COMPUTE MODULE Compute_SQL_Statements
 	CREATE FUNCTION Main() RETURNS BOOLEAN
 	BEGIN
 		CALL CopyMessageHeaders();
-		CALL ReadCSV();
-		CALL WriteTXT();
+		IF VerifyDFDL() THEN
+			CALL ReadCSV();
+			CALL WriteTXT();
+		ELSE
+			RETURN FALSE;
+		END IF;
 		RETURN TRUE;
 	END;
 
@@ -60,5 +65,17 @@ CREATE COMPUTE MODULE Compute_SQL_Statements
 			SET OutputRoot.BLOB.BLOB = CAST(ERROR_TEXT AS BLOB CCSID 1208);
 		END IF; 
 	END;	
+	
+	CREATE FUNCTION VerifyDFDL() RETURNS BOOLEAN
+	BEGIN
+		IF InputRoot.DFDL.WritingCount_CSV_Model.record[1].record_project IS NULL THEN
+			SET OutputRoot = InputRoot;
+			SET shrError = 'Input was not in the WritingCount_CSV_Model.xsd format.';
+			PROPAGATE TO TERMINAL ('out1');
+			RETURN FALSE;
+		ELSE 
+			RETURN TRUE;
+		END IF;
+	END;
 
 END MODULE;
